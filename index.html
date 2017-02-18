@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>打字游戏</title>
+</head>
+<style>
+	body{
+		font-family: "方正楷体简体";
+		background: #000;
+	}
+	.scene{
+		width: 1000px;height: 550px;overflow: hidden;
+		margin:auto;bottom: 0;left: 0;right: 0;top: 50px;
+		position: relative;background: #ccc;border-radius: 20px;
+	}
+	.main{
+		width: 80%;height: 100%;float: left;
+		background: url(images/beij.jpg) 0 0 no-repeat;
+		background-size: cover;background-position: 100% 100%;
+		position: relative;
+	}
+	.centrol{
+		width: 20%;height: 100%;float: right;
+		background: url(images/beij.jpg) 0 0 no-repeat;;
+	}
+	h3{
+		width: 100%;height: 30px;line-height: 30px;text-align: center;color: #000;
+	}
+	.show{
+		width: 150px;height: 30px;
+		border-radius: 15px;line-height: 30px;text-align: center;
+		color: #000;font-size: 15px;
+		border:2px solid yellow;margin:0 auto;
+	}
+	.line{
+		width: 100%;border-bottom: 1px solid #000;margin-top: 20px;
+	}
+	.btn{
+		display: block;width: 150px;height: 30px;
+		line-height: 30px;text-align: center;border-radius: 15px;
+		margin: 0 auto;margin-top: 20px;cursor: pointer;
+		font-size: 16px;font-family: "方正楷体简体";background: #fff;color: #000;
+	}
+	.start{
+		margin-top: 30px;
+	}
+	.letter{
+		width:78px;height:78px;position:absolute;background-position:100% 100%;background-size:cover;
+	}
+</style>
+<body>
+	<div class="scene">
+		<div class="main"></div>
+		<div class="centrol">
+			<h3>得分</h3>
+			<div class="scor show">0</div>
+			<h3>关卡</h3>
+			<div class="state show">1</div>
+			<h3>生命</h3>
+			<div class="life show">3</div>
+			<div class="line"></div>
+			<input type="button" class="btn start" value="开始">
+			<input type="button" class="btn pause" value="暂停">
+			<input type="button" class="btn over" value="结束">
+		</div>
+	</div>
+</body>
+<script src="js/function.js"></script>
+<script>
+	//先创建构造函数
+	//传入参数main
+	function Typegame(main,scor,state,life,over){
+		this.main=main;
+		this.scorele=scor;
+		this.stateele=state;
+		this.lifeele=life;
+		this.over=over;
+		this.obj={};
+		this.speed=5;
+		this.scor=0;
+		this.state=1;
+		this.num=3;
+		this.st;
+		this.life=3;
+		this.bh=main.offsetHeight;
+	}
+	//原形
+	Typegame.prototype={
+		start:function(){
+			//让这个函数循环3次，可以同时出3个数
+			for (var i = 0; i < this.num; i++) {
+				this._createLetter();
+			};
+			this._move();
+			this.keydown();
+		},
+		//加下划线表示内部的方法
+		_createLetter:function(){
+			//插入一个新的div
+			var letter=document.createElement('div');
+			//字母获取 1.先获取一个65-90的随机数
+			do{
+			var randonmum=Math.floor(Math.random()*26+65);
+			//把随机数转换成字符。用那个a什么码来着
+			var randomletter=String.fromCharCode(randonmum);
+			}while(this.obj[randomletter])
+			letter.style.backgroundImage="url(images/"+randomletter+".png)"
+			do{
+			// 让它显示在宽720的像素的空间里，总宽800-80的它自己，剩下720
+			var randomleft=Math.random()*720;
+			}while(this._check(randomleft))
+			// 让它显示在高100像素的空间里
+			var randomtop=-Math.random()*100;
+			this.obj[randomletter]={left:randomleft,top:randomtop,el:letter};
+			//letter创建的div元素
+			//调用外边letter的css样式
+			letter.className="letter";
+			//把上边获取的随机字母放入内容
+			// letter.innerHTML=randomletter;
+			//让他在这个地方显示
+			letter.style.left=randomleft+"px";
+			letter.style.top=randomtop+"px";
+			//把新建的letter放入main
+			this.main.appendChild(letter);	
+		},
+		//信息对象，left值变换
+		_check:function(left){
+			for(var i in this.obj)
+				if (left>this.obj[i].left-80&&left<this.obj[i].left+80) {
+					return true;
+				};
+		},
+		//位置改变
+		_move:function(){
+			var that=this;
+			this.st=setInterval(function(){
+				for(var i in that.obj){
+					// 便利obj的top值
+					var ot=that.obj[i].top;
+					//让他每次+1speed这个速度
+					ot+=that.speed;
+					//让他执行speed这个速度
+					that.obj[i].top=ot;
+					that.obj[i].el.style.top=ot+"px";
+					if (ot>that.bh) {
+						that.life--;
+						that.lifeele.innerHTML=that.life;
+						that.main.removeChild(that.obj[i].el);
+						delete that.obj[i];
+						that._createLetter();
+						if (that.life<=0) {
+							alert("游戏结束,生命值耗空");
+							that.end();
+						}
+					}	
+				}
+			},60)
+		},
+		//消除字母
+		keydown:function(){
+			var that=this;
+			document.onkeydown=function(e){
+				//事件对象兼容
+				var ev=e||window.event;
+				//获得当前按下的键盘码
+				var code=ev.keyCode;
+				//获得当前按下的字母
+				var key=String.fromCharCode(code);
+				//判断按下的字母在当前内容里纯不纯在
+				if (that.obj[key]) {
+					that.scor++;
+					that.scorele.innerHTML=that.scor;
+					that.main.removeChild(that.obj[key].el);
+					// 删除
+					delete that.obj[key];
+					// 再创建一个新的字母，所以重新调用
+					that._createLetter();
+					console.log(that)
+					if (that.scor%30==0) {		
+						that.nextsetate();	
+					};
+				};
+			}
+		},
+
+		nextsetate:function(){
+			this.state++;
+			this.stateele.innerHTML=this.state;
+			if (this.state<=3) {
+				this.num++;
+			}else{
+				this.speed++;
+			}
+			alert("恭喜进入"+this.state+"关");
+			this.main.innerHTML="";
+			this.obj={};
+			clearInterval(this.st)
+			this.start();
+		},
+		end:function(){
+			alert("游戏结束，共得到"+this.scor+"分");				
+			clearInterval(this.st);
+			this.main.innerHTML="";
+			this.obj={};
+			this.life=3;
+			this.scor=0;
+			this.state=1;
+			this.speed=5;
+			this.num=3;
+			this.lifeele.innerHTML=this.life;
+			this.scorele.innerHTML=this.scor;
+			this.stateele.innerHTML=this.state;
+		},
+		_stop:function(){
+			clearInterval(this.st)
+		}
+	}
+	var mainele=$('.main')[0];//左边显示框
+	var scorele=$('.scor')[0];//得分
+	var stateele=$('.state')[0];//关卡
+	var lifeele=$('.life')[0];//生命
+	var stop=$('.pause')[0];//暂停
+	var start=$('.start')[0];//开始
+	var over=$('.over')[0];//结束
+	// 实例化
+	var game=new Typegame(mainele,scorele,stateele,lifeele);
+
+	start.onclick=function(){
+		this.disabled=true;
+		game.start();
+	}
+	 var flag=true;
+       stop.onclick=function(){
+       	if(flag){
+       		flag=false;
+       	  game._stop();
+       	  this.value="继续";
+       	}else{
+       		flag=true;
+       		game._move();
+       		this.value="暂停";
+       	}
+       };
+
+       over.onclick=function(){
+       	 game.end();
+       };
+	//main  左边盒子
+
+</script>
+</html>
